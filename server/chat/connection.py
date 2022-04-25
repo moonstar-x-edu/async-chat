@@ -20,13 +20,41 @@ class Connection(Thread):
 
         self.peer = None
 
-    def is_engaged(self):
+    def is_engaged(self) -> bool:
         return self.peer is not None
+
+    def send_to_peer(self, message: str) -> None:
+        if self.peer is None:
+            return self.send_to_socket(TAG_ERR, 'No peer to send a message to.')
+
+        return self.peer.send_to_socket(TAG_MSG, message)
+
+    def connect_to(self, peer_connection) -> None:
+        if peer_connection == self:
+            return self.send_to_socket(TAG_ERR, 'You cannot chat with yourself.')
+
+        self.peer = peer_connection
+        peer_connection.peer = self
+        self.peer.send_to_socket(TAG_CMD, f'connect {self.username}')
+
+        self.log('INFO', f'Chatting now with {peer_connection.address}')
+        return self.send_to_socket(TAG_CMD, 'SUCCESS')
+
+    def disconnect_from_peer(self) -> None:
+        if not self.is_engaged():
+            return self.send_to_socket(TAG_ERR, 'You are not chatting with anyone currently.')
+
+        self.peer.send_to_socket(TAG_CMD, 'disconnect')
+        self.log('INFO', f'No longer chatting with {self.peer.address}')
+
+        self.peer.peer = None
+        self.peer = None
+        return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
     def run(self) -> None:
         try:
             while True:
-                self.handle_received_message(self._receive_from_socket())
+                self.handle_received_message(self.receive_from_socket())
 
         except BaseException as error:
             self.log('ERROR', str(error))
@@ -45,40 +73,42 @@ class Connection(Thread):
         if tag == TAG_CFG:
             return self._handle_config(received_message)
 
+        return self.send_to_socket(TAG_ERR, 'Message sent with an invalid tag.')
+
     def _handle_message(self, message: str) -> None:
         if not self.is_engaged():
-            return self._send_to_socket(TAG_ERR, 'You are not connected to anybody else.')
+            return self.send_to_socket(TAG_ERR, 'You are not connected to anybody else.')
 
         # Send message to recipient.
 
     def _handle_command(self, command: str) -> None:
         if command == 'list':
-            return self._send_to_socket(TAG_LIST, self.server.get_online_list())
+            return self.send_to_socket(TAG_LIST, self.server.get_online_list())
 
         if command.startswith('connect'):
             # Handle client connection.
-            return self._send_to_socket(TAG_CMD, 'SUCCESS')
+            return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
         if command == 'disconnect':
             # Handle client disconnection.
-            return self._send_to_socket(TAG_CMD, 'SUCCESS')
+            return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
-        return self._send_to_socket(TAG_ERR, 'Invalid CMD message sent.')
+        return self.send_to_socket(TAG_ERR, 'Invalid CMD message sent.')
 
     def _handle_config(self, config: str) -> None:
         if config.startswith('set_username'):
             username = config[:config.index('set_username')]
 
             if self.server.get_connection_by_username(username) is not None:
-                return self._send_to_socket(TAG_ERR, 'Username already in use.')
+                return self.send_to_socket(TAG_ERR, 'Username already in use.')
 
             self.username = username
             self.log('INFO', f'Saved username for client as {self.username}')
-            return self._send_to_socket(TAG_CFG, 'SUCCESS')
+            return self.send_to_socket(TAG_CFG, 'SUCCESS')
 
-        return self._send_to_socket(TAG_ERR, 'Invalid CFG message sent.')
+        return self.send_to_socket(TAG_ERR, 'Invalid CFG message sent.')
 
-    def _receive_from_socket(self) -> str:
+    def receive_from_socket(self) -> str:
         if self.socket is None:
             raise Exception('No socket connection is available to this client.')
 
@@ -92,7 +122,7 @@ class Connection(Thread):
 
         return data
 
-    def _send_to_socket(self, tag: str, message: str) -> None:
+    def send_to_socket(self, tag: str, message: str) -> None:
         if self.socket is None:
             raise Exception('No socket connection is available to this client.')
 
