@@ -79,25 +79,32 @@ class Connection(Thread):
         if not self.is_engaged():
             return self.send_to_socket(TAG_ERR, 'You are not connected to anybody else.')
 
-        # Send message to recipient.
+        return self.send_to_peer(message)
 
     def _handle_command(self, command: str) -> None:
         if command == 'list':
             return self.send_to_socket(TAG_LIST, self.server.get_online_list())
 
         if command.startswith('connect'):
-            # Handle client connection.
-            return self.send_to_socket(TAG_CMD, 'SUCCESS')
+            peer_username = command[len('connect '):]
+            peer_connection = self.server.get_connection_by_username(peer_username)
+            if peer_connection is None:
+                return self.send_to_socket(TAG_ERR, 'Username not found.')
+
+            return self.connect_to(peer_connection)
 
         if command == 'disconnect':
-            # Handle client disconnection.
-            return self.send_to_socket(TAG_CMD, 'SUCCESS')
+            if self.is_engaged():
+                return self.disconnect_from_peer()
+
+            self.send_to_socket(TAG_CMD, 'exit')
+            return self.server.close_connection(self)
 
         return self.send_to_socket(TAG_ERR, 'Invalid CMD message sent.')
 
     def _handle_config(self, config: str) -> None:
         if config.startswith('set_username'):
-            username = config[:config.index('set_username')]
+            username = config[len('set_username '):]
 
             if self.server.get_connection_by_username(username) is not None:
                 return self.send_to_socket(TAG_ERR, 'Username already in use.')
