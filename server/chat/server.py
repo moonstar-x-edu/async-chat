@@ -53,6 +53,14 @@ class Server:
 
         return None
 
+    def get_online_list(self):
+        connections = filter(lambda c: c.is_engaged(), self.connections.values())
+        user_list = map(lambda c: c.username, connections)
+        user_list = filter(lambda u: u is not None, user_list)
+        user_list = ', '.join(user_list)
+
+        return user_list
+
     def close_connection(self, connection: Connection) -> None:
         if self.connections.get(connection.address) is None:
             return
