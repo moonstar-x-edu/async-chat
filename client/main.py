@@ -1,6 +1,8 @@
 import sys
 from chat.client import Client
-
+from ui.chat_interface import ChatInterface
+from tkinter import *
+from tkinter import ttk
 
 def main():
     try:
@@ -21,9 +23,12 @@ def main():
     client.connect()
     client.send_to_socket('CMD', 'HI') # Testing sending while receiving.
 
-    while True:
-        pass # Keep alive (not necessary with UI)
+    # while True:
+    #     pass # Keep alive (not necessary with UI)
 
+    root = Tk()
+    ChatInterface(root)
+    root.mainloop()
 
 if __name__ == '__main__':
     main()
