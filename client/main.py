@@ -1,5 +1,6 @@
 import sys
 from chat.client import Client
+from chat.cli_client import CLIClient
 
 
 def main():
@@ -19,10 +20,10 @@ def main():
 
     client = Client(host, int(port))
     client.connect()
-    client.send_to_socket('CMD', 'HI') # Testing sending while receiving.
 
-    while True:
-        pass # Keep alive (not necessary with UI)
+    # Testing purposes...
+    cli_client = CLIClient(client)
+    cli_client.start()
 
 
 if __name__ == '__main__':
