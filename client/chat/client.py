@@ -1,4 +1,5 @@
 import socket
+import sys
 from client.utils.events import EventEmitter
 
 DEFAULT_BUFFER_SIZE = 1024
@@ -19,10 +20,7 @@ class ClientEventEmitter(EventEmitter):
     def run(self) -> None:
         while True:
             received_message = self.client.receive_from_socket()
-            separator_index = received_message.index('|')
-
-            tag = received_message[:separator_index]
-            received_message = received_message[separator_index + 1:]
+            tag, received_message = self.client.parse_received_message(received_message)
 
             if tag == TAG_MSG:
                 self.emit('message', [received_message])
@@ -41,12 +39,12 @@ class ClientEventEmitter(EventEmitter):
 
 
 class Client:
-    def __init__(self, host: str, port: int, **kwargs):
+    def __init__(self, host: str, port: int, username: str, **kwargs):
         self.emitter = ClientEventEmitter(self)
 
         self.host = host
         self.port = port
-        self.username = None
+        self.username = username
 
         self.socket = None
         self.buf_size = kwargs.get('buffer_size') or DEFAULT_BUFFER_SIZE
@@ -55,8 +53,20 @@ class Client:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
 
+        self._set_username()
+
         self._register_events()
         self.emitter.start()
+
+    def _set_username(self):
+        self.send_to_socket(TAG_CFG, f'set_username {self.username}')
+        username_response = self.receive_from_socket()
+        tag, username_response = self.parse_received_message(username_response)
+
+        if tag == TAG_ERR:
+            print(username_response)
+            self.socket.close()
+            sys.exit(1)
 
     def _register_events(self):
         self.emitter.on('message', self._handle_message)
@@ -96,3 +106,12 @@ class Client:
             raise Exception('No socket connection is available to this client.')
 
         self.socket.sendall(f'{tag}|{message}'.encode('ASCII'))
+
+    @staticmethod
+    def parse_received_message(received_message: str):
+        separator_index = received_message.index('|')
+
+        tag = received_message[:separator_index]
+        received_message = received_message[separator_index + 1:]
+
+        return tag, received_message
