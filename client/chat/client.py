@@ -1,6 +1,6 @@
 import socket
 import sys
-from client.utils.events import EventEmitter
+from utils.events import EventEmitter
 
 DEFAULT_BUFFER_SIZE = 1024
 

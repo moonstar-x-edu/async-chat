@@ -18,37 +18,42 @@ class Connection(Thread):
         self.address = client_address
         self.username = None
 
-        self.peer = None
+        self.peers = dict()
 
-    def is_engaged(self) -> bool:
-        return self.peer is not None
+    def send_to_peer(self, peer_username: str, message: str) -> None:
+        peer = self.peers.get(peer_username)
 
-    def send_to_peer(self, message: str) -> None:
-        if self.peer is None:
-            return self.send_to_socket(TAG_ERR, 'No peer to send a message to.')
+        if peer is None:
+            return self.send_to_socket(TAG_ERR, f'You are not chatting with {peer_username}.')
 
-        return self.peer.send_to_socket(TAG_MSG, message)
+        return peer.send_to_socket(TAG_MSG, f'{self.username};{message}')
 
     def connect_to(self, peer_connection) -> None:
         if peer_connection == self:
             return self.send_to_socket(TAG_ERR, 'You cannot chat with yourself.')
 
-        self.peer = peer_connection
-        peer_connection.peer = self
-        self.peer.send_to_socket(TAG_CMD, f'connect {self.username}')
+        self.peers[peer_connection.username] = peer_connection
+        peer_connection.peers[self.username] = self
+        peer_connection.send_to_socket(TAG_CMD, f'connect {self.username}')
 
         self.log('INFO', f'Chatting now with {peer_connection.address}')
+        peer_connection.log('INFO', f'Chatting now with {self.address}')
+
         return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
-    def disconnect_from_peer(self) -> None:
-        if not self.is_engaged():
-            return self.send_to_socket(TAG_ERR, 'You are not chatting with anyone currently.')
+    def disconnect_from_peer(self, peer_username: str) -> None:
+        peer = self.peers.get(peer_username)
 
-        self.peer.send_to_socket(TAG_CMD, 'disconnect')
-        self.log('INFO', f'No longer chatting with {self.peer.address}')
+        if peer is None:
+            return self.send_to_socket(TAG_ERR, f'You are not chatting with {peer_username}.')
 
-        self.peer.peer = None
-        self.peer = None
+        peer.send_to_socket(TAG_CMD, f'disconnect {self.username}')
+        self.log('INFO', f'No longer chatting with {peer.address}')
+        peer.log('INFO', f'No longer chatting with {self.address}')
+
+        del self.peers[peer_username]
+        del peer.peers[self.username]
+
         return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
     def run(self) -> None:
@@ -61,7 +66,10 @@ class Connection(Thread):
             self.server.close_connection(self)
 
     def handle_received_message(self, received_message: str) -> None:
-        separator_index = received_message.index('|')
+        try:
+            separator_index = received_message.index('|')
+        except ValueError:
+            return self.send_to_socket(TAG_ERR, 'Badly constructed message.')
 
         tag = received_message[:separator_index]
         received_message = received_message[separator_index + 1:]
@@ -76,10 +84,15 @@ class Connection(Thread):
         return self.send_to_socket(TAG_ERR, 'Message sent with an invalid tag.')
 
     def _handle_message(self, message: str) -> None:
-        if not self.is_engaged():
-            return self.send_to_socket(TAG_ERR, 'You are not connected to anybody else.')
+        try:
+            separator_index = message.index(';')
+        except ValueError:
+            return self.send_to_socket(TAG_ERR, 'Badly constructed message.')
 
-        return self.send_to_peer(message)
+        peer_username = message[:separator_index]
+        message_content = message[separator_index + 1:]
+
+        return self.send_to_peer(peer_username, message_content)
 
     def _handle_command(self, command: str) -> None:
         if command == 'list':
@@ -87,17 +100,28 @@ class Connection(Thread):
 
         if command.startswith('connect'):
             peer_username = command[len('connect '):]
+
+            if len(peer_username) < 1:
+                return self.send_to_socket(TAG_ERR, 'You need to specify a user to connect to.')
+
             peer_connection = self.server.get_connection_by_username(peer_username)
             if peer_connection is None:
                 return self.send_to_socket(TAG_ERR, 'Username not found.')
 
             return self.connect_to(peer_connection)
 
-        if command == 'disconnect':
-            if self.is_engaged():
-                return self.disconnect_from_peer()
+        if command.startswith('disconnect'):
+            peer_username = command[len('disconnect '):]
 
-            self.send_to_socket(TAG_CMD, 'exit')
+            if len(peer_username) < 1:
+                return self.send_to_socket(TAG_ERR, 'You need to specify a user to connect to.')
+
+            return self.disconnect_from_peer(peer_username)
+
+        if command == 'exit':
+            for peer_username in self.peers.keys():
+                self.disconnect_from_peer(peer_username)
+
             return self.server.close_connection(self)
 
         return self.send_to_socket(TAG_ERR, 'Invalid CMD message sent.')
