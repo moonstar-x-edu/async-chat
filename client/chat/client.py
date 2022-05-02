@@ -75,20 +75,25 @@ class Client:
         self.emitter.on('command', self._handle_command)
         self.emitter.on('list', self._handle_list)
 
-    def _handle_message(self, message: str) -> None:
-        print(f'Response -> MESSAGE: {message}')
+    @staticmethod
+    def _handle_message(author: str, message: str) -> None:
+        print(f'[SERVER]: {author} said: {message}')
 
-    def _handle_error(self, error: str) -> None:
-        print(f'Response -> ERROR: {error}')
+    @staticmethod
+    def _handle_error(error: str) -> None:
+        print(f'[SERVER]: Oops! Something happened: {error}')
 
-    def _handle_config(self, config: str) -> None:
-        print(f'Response -> CONFIG: {config}')
+    @staticmethod
+    def _handle_config(config: str) -> None:
+        print(f'[SERVER]: Received config result: {config}')
 
-    def _handle_command(self, command: str) -> None:
-        print(f'Response -> COMMAND: {command}')
+    @staticmethod
+    def _handle_command(command: str) -> None:
+        print(f'[SERVER]: Received command from server: {command}')
 
-    def _handle_list(self, user_list: str) -> None:
-        print(f'Response -> LIST: {user_list}')
+    @staticmethod
+    def _handle_list(user_list: str) -> None:
+        print(f'[SERVER]: Users online: {user_list}')
 
     def receive_from_socket(self) -> str:
         if self.socket is None:
