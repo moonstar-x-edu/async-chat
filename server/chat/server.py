@@ -16,7 +16,7 @@ class Server:
         self.connections = dict()
         self.socket = None
 
-    def start(self) -> None:
+    def start(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(('', self.port))
@@ -24,7 +24,7 @@ class Server:
 
         self.log('INFO', f'Server started on port {self.port}')
 
-    def listen_for_connections(self) -> None:
+    def listen_for_connections(self):
         if self.socket is None:
             raise Exception('No socket connection is available to this server.')
 
@@ -61,7 +61,7 @@ class Server:
 
         return user_list
 
-    def close_connection(self, connection: Connection) -> None:
+    def close_connection(self, connection: Connection):
         if self.connections.get(connection.address) is None:
             return
 
@@ -70,7 +70,7 @@ class Server:
 
         del self.connections[connection.address]
 
-    def close_server(self) -> None:
+    def close_server(self):
         if self.socket is None:
             raise Exception('No socket connection is available to this server.')
 
@@ -79,5 +79,5 @@ class Server:
             connection.socket.close()
 
     @staticmethod
-    def log(label: str, message: str) -> None:
+    def log(label: str, message: str):
         print(f'(SERVER): [{label}] - {message}')

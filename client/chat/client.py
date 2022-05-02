@@ -19,7 +19,7 @@ class ClientEventEmitter(EventEmitter):
 
         self.client = client
 
-    def run(self) -> None:
+    def run(self):
         while True:
             received_message = self.client.receive_from_socket()
             tag, received_message = self.client.parse_received_message(received_message)
@@ -54,7 +54,7 @@ class Client:
         self.socket = None
         self.buf_size = kwargs.get('buffer_size') or DEFAULT_BUFFER_SIZE
 
-    def connect(self) -> None:
+    def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
 
@@ -97,23 +97,23 @@ class Client:
         self.emitter.on('list', self._handle_list)
 
     @staticmethod
-    def _handle_message(author: str, message: str) -> None:
+    def _handle_message(author: str, message: str):
         print(f'[SERVER]: {author} said: {message}')
 
     @staticmethod
-    def _handle_error(error: str) -> None:
+    def _handle_error(error: str):
         print(f'[SERVER]: Oops! Something happened: {error}')
 
     @staticmethod
-    def _handle_config(config: str) -> None:
+    def _handle_config(config: str):
         print(f'[SERVER]: Received config result: {config}')
 
     @staticmethod
-    def _handle_command(command: str) -> None:
+    def _handle_command(command: str):
         print(f'[SERVER]: Received command from server: {command}')
 
     @staticmethod
-    def _handle_list(user_list: str) -> None:
+    def _handle_list(user_list: str):
         print(f'[SERVER]: Users online: {user_list}')
 
     def receive_from_socket(self) -> str:
@@ -127,7 +127,7 @@ class Client:
 
         return data.decode('ASCII')
 
-    def send_to_socket(self, tag: str, message: str) -> None:
+    def send_to_socket(self, tag: str, message: str):
         if self.socket is None:
             raise Exception('No socket connection is available to this client.')
 

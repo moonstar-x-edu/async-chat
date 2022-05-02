@@ -20,7 +20,7 @@ class Connection(Thread):
 
         self.peers = dict()
 
-    def send_to_peer(self, peer_username: str, message: str) -> None:
+    def send_to_peer(self, peer_username: str, message: str):
         peer = self.peers.get(peer_username)
 
         if peer is None:
@@ -28,7 +28,7 @@ class Connection(Thread):
 
         return peer.send_to_socket(TAG_MSG, f'{self.username};{message}')
 
-    def connect_to(self, peer_connection) -> None:
+    def connect_to(self, peer_connection):
         if peer_connection == self:
             return self.send_to_socket(TAG_ERR, 'You cannot chat with yourself.')
 
@@ -41,7 +41,7 @@ class Connection(Thread):
 
         return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
-    def disconnect_from_peer(self, peer_username: str) -> None:
+    def disconnect_from_peer(self, peer_username: str):
         peer = self.peers.get(peer_username)
 
         if peer is None:
@@ -56,7 +56,7 @@ class Connection(Thread):
 
         return self.send_to_socket(TAG_CMD, 'SUCCESS')
 
-    def run(self) -> None:
+    def run(self):
         try:
             while True:
                 self.handle_received_message(self.receive_from_socket())
@@ -65,7 +65,7 @@ class Connection(Thread):
             self.log('ERROR', str(error))
             self.server.close_connection(self)
 
-    def handle_received_message(self, received_message: str) -> None:
+    def handle_received_message(self, received_message: str):
         try:
             separator_index = received_message.index('|')
         except ValueError:
@@ -83,7 +83,7 @@ class Connection(Thread):
 
         return self.send_to_socket(TAG_ERR, 'Message sent with an invalid tag.')
 
-    def _handle_message(self, message: str) -> None:
+    def _handle_message(self, message: str):
         try:
             separator_index = message.index(';')
         except ValueError:
@@ -94,7 +94,7 @@ class Connection(Thread):
 
         return self.send_to_peer(peer_username, message_content)
 
-    def _handle_command(self, command: str) -> None:
+    def _handle_command(self, command: str):
         if command == 'list':
             return self.send_to_socket(TAG_LIST, self.server.get_online_list())
 
@@ -126,7 +126,7 @@ class Connection(Thread):
 
         return self.send_to_socket(TAG_ERR, 'Invalid CMD message sent.')
 
-    def _handle_config(self, config: str) -> None:
+    def _handle_config(self, config: str):
         if config.startswith('set_username'):
             username = config[len('set_username '):]
 
@@ -153,7 +153,7 @@ class Connection(Thread):
 
         return data
 
-    def send_to_socket(self, tag: str, message: str) -> None:
+    def send_to_socket(self, tag: str, message: str):
         if self.socket is None:
             raise Exception('No socket connection is available to this client.')
 
@@ -162,5 +162,5 @@ class Connection(Thread):
 
         self.socket.sendall(to_send.encode('ASCII'))
 
-    def log(self, label: str, message: str) -> None:
+    def log(self, label: str, message: str):
         print(f'({self.address}): [{label}] - {message}')
