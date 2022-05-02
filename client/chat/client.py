@@ -25,7 +25,9 @@ class ClientEventEmitter(EventEmitter):
             tag, received_message = self.client.parse_received_message(received_message)
 
             if tag == TAG_MSG:
-                self.emit('message', [received_message])
+                author, message = self.client.parse_received_message(received_message, ';')
+
+                self.emit('message', [author, message])
                 continue
             if tag == TAG_ERR:
                 self.emit('error', [received_message])
@@ -120,8 +122,8 @@ class Client:
         self.socket.sendall(f'{tag}|{message}'.encode('ASCII'))
 
     @staticmethod
-    def parse_received_message(received_message: str):
-        separator_index = received_message.index('|')
+    def parse_received_message(received_message: str, separator='|'):
+        separator_index = received_message.index(separator)
 
         tag = received_message[:separator_index]
         received_message = received_message[separator_index + 1:]
