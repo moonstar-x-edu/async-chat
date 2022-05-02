@@ -1,8 +1,10 @@
 import socket
 import sys
 from utils.events import EventEmitter
+from utils.schedulers import IntervalExecutor
 
 DEFAULT_BUFFER_SIZE = 1024
+DEFAULT_LIST_INTERVAL = 10
 
 TAG_MSG = 'MSG'
 TAG_ERR = 'ERR'
@@ -41,6 +43,7 @@ class ClientEventEmitter(EventEmitter):
 class Client:
     def __init__(self, host: str, port: int, username: str, **kwargs):
         self.emitter = ClientEventEmitter(self)
+        self.list_executor = IntervalExecutor(kwargs.get('list_interval') or DEFAULT_LIST_INTERVAL, self._request_list)
 
         self.host = host
         self.port = port
@@ -57,6 +60,7 @@ class Client:
 
         self._register_events()
         self.emitter.start()
+        self.list_executor.start()
 
     def _set_username(self):
         self.send_to_socket(TAG_CFG, f'set_username {self.username}')
@@ -67,6 +71,9 @@ class Client:
             print(username_response)
             self.socket.close()
             sys.exit(1)
+
+    def _request_list(self):
+        self.send_to_socket(TAG_CMD, 'list')
 
     def _register_events(self):
         self.emitter.on('message', self._handle_message)
