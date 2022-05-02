@@ -45,7 +45,7 @@ class ClientEventEmitter(EventEmitter):
 class Client:
     def __init__(self, host: str, port: int, username: str, **kwargs):
         self.emitter = ClientEventEmitter(self)
-        self.list_executor = IntervalExecutor(kwargs.get('list_interval') or DEFAULT_LIST_INTERVAL, self._request_list)
+        self.list_executor = IntervalExecutor(kwargs.get('list_interval') or DEFAULT_LIST_INTERVAL, self.request_list)
 
         self.host = host
         self.port = port
@@ -64,6 +64,21 @@ class Client:
         self.emitter.start()
         self.list_executor.start()
 
+    def connect_to_user(self, username: str):
+        return self.send_to_socket(TAG_CMD, f'connect {username}')
+
+    def disconnect_from_user(self, username: str):
+        return self.send_to_socket(TAG_CMD, f'disconnect {username}')
+
+    def send_exit(self):
+        return self.send_to_socket(TAG_CMD, 'exit')
+
+    def send_message_to(self, recipient: str, message: str):
+        return self.send_to_socket(TAG_MSG, f'{recipient};{message}')
+
+    def request_list(self):
+        return self.send_to_socket(TAG_CMD, 'list')
+
     def _set_username(self):
         self.send_to_socket(TAG_CFG, f'set_username {self.username}')
         username_response = self.receive_from_socket()
@@ -73,9 +88,6 @@ class Client:
             print(username_response)
             self.socket.close()
             sys.exit(1)
-
-    def _request_list(self):
-        self.send_to_socket(TAG_CMD, 'list')
 
     def _register_events(self):
         self.emitter.on('message', self._handle_message)
