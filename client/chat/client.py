@@ -36,6 +36,14 @@ class ClientEventEmitter(EventEmitter):
                 self.emit('config', [received_message])
                 continue
             if tag == TAG_CMD:
+                if received_message.startswith('connect'):
+                    peer_username = received_message[len('connect '):]
+                    self.emit('connect', [peer_username])
+
+                elif received_message.startswith('disconnect'):
+                    peer_username = received_message[len('disconnect '):]
+                    self.emit('disconnect', [peer_username])
+
                 self.emit('command', [received_message])
                 continue
             if tag == TAG_LIST:
