@@ -17,7 +17,16 @@ class ChatInterface:
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
-        # Declarations
+        # Images
+        self.send_icon = ImageTk.PhotoImage(
+            Image.open(os.path.abspath(
+                f'{CURRENT_DIRECTORY}/../assets/send.png')).resize((20, 20)))
+
+        self.choose_file_icon = ImageTk.PhotoImage(
+            Image.open(os.path.abspath(
+                f'{CURRENT_DIRECTORY}/../assets/clip.png')).resize((20, 20)))
+
+        # Widget Declarations
         users_lb = ttk.Label(mainframe, text='Users available: ')
         rooms_lb = ttk.Label(mainframe, text='Rooms available: ')
 
@@ -25,28 +34,21 @@ class ChatInterface:
         chat_text = Text(mainframe, width=40, height=10)
         room_lbx = Listbox(mainframe, height=5)
 
-        user_entry = ttk.Entry(mainframe)
+        user_entry = ttk.Entry(mainframe, width=40)
 
-        send_icon = PhotoImage(file=os.path.abspath(f'{CURRENT_DIRECTORY}/../assets/send.png'))
-        #image1 = Image.open(os.path.abspath(f'{CURRENT_DIRECTORY}/../assets/right-arrow.png'))
-        # image1 = image1.resize((10, 10), Image.ANTIALIAS)
+        send_bt = ttk.Button(mainframe, image=self.send_icon)
+        send_bt.image = self.send_icon  # prevents garbage collection
 
-        # test = ImageTk.PhotoImage(Image.open(os.path.abspath(f'{CURRENT_DIRECTORY}/../assets/right-arrow.png')).resize((20, 20), Image.ANTIALIAS))
-        send_lb = ttk.Label(mainframe, text='merengues')
-        #send_lb['image'] = test
-        #send_lb['text'] = 'holis'
-        #send_lb['text'] = 'Hola'
+        file_bt = ttk.Button(mainframe, image=self.choose_file_icon)
+        file_bt.image = self.choose_file_icon
 
+        # Positioning
+        users_lb.grid(column=0, row=0, pady=5, padx=15, sticky='w')
+        rooms_lb.grid(column=0, row=2, pady=5, padx=15, sticky='w')
+        user_lbx.grid(column=0, row=1, padx=10)
+        chat_text.grid(column=1, row=1, columnspan=3, rowspan=3, sticky='nsew')
+        room_lbx.grid(column=0, row=3, rowspan=2, padx=15)
 
-        #image = PhotoImage(file='right-arrow.jpg')
-        #send_lb['image'] = image
-
-        #Postioning
-        users_lb.grid(column=0, row=0)
-        rooms_lb.grid(column=0, row=2)
-        user_lbx.grid(column=0, row=1)
-        chat_text.grid(column=1, row=1, columnspan=3)
-        room_lbx.grid(column=0, row=3)
-        user_entry.grid(column=1, row=3, sticky=(W))
-
-        send_lb.grid(column=5, row=5)
+        user_entry.grid(column=1, row=4, sticky='we')
+        send_bt.grid(column=2, row=4, sticky='we')
+        file_bt.grid(column=3, row=4, sticky='we')
