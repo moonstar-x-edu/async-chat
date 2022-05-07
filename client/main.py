@@ -1,7 +1,8 @@
 import sys
 from chat.client import Client
-from chat.cli_client import CLIClient
-
+from ui.chat_interface import ChatInterface
+from tkinter import *
+from tkinter import ttk
 
 def main():
     try:
@@ -27,9 +28,9 @@ def main():
     client = Client(host, int(port), username)
     client.connect()
 
-    # Testing purposes...
-    cli_client = CLIClient(client)
-    cli_client.start()
+    root = Tk()
+    ChatInterface(root, client)
+    root.mainloop()
 
 
 if __name__ == '__main__':
