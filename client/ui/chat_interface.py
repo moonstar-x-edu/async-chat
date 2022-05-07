@@ -8,12 +8,13 @@ CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 class ChatInterface:
 
-    def __init__(self, root):
+    def __init__(self, root, client):
 
+        self.client = client
         root.title("Async Chat")
 
-        mainframe = ttk.Frame(root, padding="3 3 12 12")
-        mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.mainframe = ttk.Frame(root, padding="3 3 12 12")
+        self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
@@ -26,29 +27,35 @@ class ChatInterface:
             Image.open(os.path.abspath(
                 f'{CURRENT_DIRECTORY}/../assets/clip.png')).resize((20, 20)))
 
+
+        # Variable declarations
+        self.user_greetings = StringVar()
+        self.user_list_example = ["user1", "user2"]
+        self.user_list = StringVar(value=self.user_list_example)
+
         # Widget Declarations
-        users_lb = ttk.Label(mainframe, text='Users available: ')
-        rooms_lb = ttk.Label(mainframe, text='Rooms available: ')
+        user_greetings_lb = ttk.Label(self.mainframe, textvariable=self.user_greetings)
+        user_greetings_lb.text = self.user_greetings  # prevents garbage collection
 
-        user_lbx = Listbox(mainframe, height=10)
-        chat_text = Text(mainframe, width=40, height=10)
-        room_lbx = Listbox(mainframe, height=5)
+        user_lbx = Listbox(self.mainframe, height=10, listvariable=self.user_list)
+        start_chat_btn = ttk.Button(self.mainframe, text="Start chat", command=self.onStartChat)
 
-        user_entry = ttk.Entry(mainframe, width=40)
+        self.user_list_example.append("user3")
+        self.user_list.set(self.user_list_example)
 
-        send_bt = ttk.Button(mainframe, image=self.send_icon)
-        send_bt.image = self.send_icon  # prevents garbage collection
 
-        file_bt = ttk.Button(mainframe, image=self.choose_file_icon)
-        file_bt.image = self.choose_file_icon
+        self.user_greetings.set("Bienvenido, {username xd}!")
+
+        # If enter is pressed, bind to onStartChat
+        # root.bind("<Return>", self.onStartChat())
 
         # Positioning
-        users_lb.grid(column=0, row=0, pady=5, padx=15, sticky='w')
-        rooms_lb.grid(column=0, row=2, pady=5, padx=15, sticky='w')
-        user_lbx.grid(column=0, row=1, padx=10)
-        chat_text.grid(column=1, row=1, columnspan=3, rowspan=3, sticky='nsew')
-        room_lbx.grid(column=0, row=3, rowspan=2, padx=15)
+        user_greetings_lb.grid(column=0, row=0, pady=5, padx=10)
+        user_lbx.grid(column=0, row=1)
+        start_chat_btn.grid(column=0, row=2)
 
-        user_entry.grid(column=1, row=4, sticky='we')
-        send_bt.grid(column=2, row=4, sticky='we')
-        file_bt.grid(column=3, row=4, sticky='we')
+
+    def onStartChat(self):
+        t = Toplevel(self.mainframe)
+        t.title = "Chat room with"
+

@@ -32,7 +32,7 @@ def main():
     #     pass # Keep alive (not necessary with UI)
 
     root = Tk()
-    ChatInterface(root)
+    ChatInterface(root, client)
     root.mainloop()
 
 if __name__ == '__main__':
