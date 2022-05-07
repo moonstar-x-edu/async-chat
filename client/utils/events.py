@@ -8,7 +8,7 @@ class EventEmitter(Thread):
 
         self.handlers = dict()
 
-    def on(self, event: str, fn) -> None:
+    def on(self, event: str, fn):
         handlers = self.handlers.get(event)
 
         if handlers is None:
@@ -16,10 +16,10 @@ class EventEmitter(Thread):
 
         self.handlers[event].append(fn)
 
-    def off(self, event: str) -> None:
+    def off(self, event: str):
         self.handlers[event] = None
 
-    def emit(self, event: str, args: list) -> None:
+    def emit(self, event: str, args: list):
         if args is None:
             args = []
 

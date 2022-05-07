@@ -8,20 +8,25 @@ def main():
     try:
         host = sys.argv[1]
     except IndexError:
-        print('Please include the host to connect to: python main.py <host> <port>')
+        print('Please include the host to connect to: python main.py <host> <port> <username>')
         sys.exit(1)
 
     try:
         port = sys.argv[2]
     except IndexError:
-        print('Please include the host to connect to: python main.py <host> <port>')
+        print('Please include the port to connect to: python main.py <host> <port> <username>')
+        sys.exit(1)
+
+    try:
+        username = sys.argv[3]
+    except IndexError:
+        print('Please include your username: python main.py <host> <port> <username>')
         sys.exit(1)
 
     print('Starting client...')
 
-    client = Client(host, int(port))
+    client = Client(host, int(port), username)
     client.connect()
-    client.send_to_socket('CMD', 'HI') # Testing sending while receiving.
 
     # while True:
     #     pass # Keep alive (not necessary with UI)
