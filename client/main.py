@@ -28,12 +28,10 @@ def main():
     client = Client(host, int(port), username)
     client.connect()
 
-    # while True:
-    #     pass # Keep alive (not necessary with UI)
-
     root = Tk()
     ChatInterface(root, client)
     root.mainloop()
+
 
 if __name__ == '__main__':
     main()
