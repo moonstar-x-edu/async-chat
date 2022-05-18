@@ -2,6 +2,7 @@ import socket
 import sys
 from utils.events import EventEmitter
 from utils.schedulers import IntervalExecutor
+from .filetransfer import FileTransferUploader, FileTransferDownloader
 
 DEFAULT_BUFFER_SIZE = 1024
 DEFAULT_LIST_INTERVAL = 10
@@ -11,6 +12,7 @@ TAG_ERR = 'ERR'
 TAG_CFG = 'CFG'
 TAG_CMD = 'CMD'
 TAG_LIST = 'LIST'
+TAG_FILE = 'FILE'
 
 
 class ClientEventEmitter(EventEmitter):
@@ -48,23 +50,31 @@ class ClientEventEmitter(EventEmitter):
                 continue
             if tag == TAG_LIST:
                 self.emit('list', [received_message])
+            if tag == TAG_FILE:
+                self.emit('file', [received_message])
 
 
 class Client:
-    def __init__(self, host: str, port: int, username: str, **kwargs):
+    def __init__(self, host: str, chat_port: int, file_transfer_port: int, username: str, **kwargs):
         self.emitter = ClientEventEmitter(self)
         self.list_executor = IntervalExecutor(kwargs.get('list_interval') or DEFAULT_LIST_INTERVAL, self.request_list)
 
         self.host = host
-        self.port = port
+        self.chat_port = chat_port
+        self.file_transfer_port = file_transfer_port
         self.username = username
 
         self.socket = None
         self.buf_size = kwargs.get('buffer_size') or DEFAULT_BUFFER_SIZE
 
+        self.file_transfer_uploader = None
+        self.file_transfer_downloader = None
+
+        self.on_file_downloaded = None
+
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.host, self.port))
+        self.socket.connect((self.host, self.chat_port))
 
         self._set_username()
 
@@ -87,6 +97,14 @@ class Client:
     def request_list(self):
         return self.send_to_socket(TAG_CMD, 'list')
 
+    def send_file(self, destination_user: str, filename: str, file_path: str):
+        self.file_transfer_uploader = FileTransferUploader(self.username, destination_user, self.host, self.file_transfer_port, buffer_size=self.buf_size)
+        self.file_transfer_uploader.set_file_data(filename, file_path)
+        self.file_transfer_uploader.start()
+
+    def set_on_file_downloaded(self, on_file_downloaded):
+        self.on_file_downloaded = on_file_downloaded
+
     def _set_username(self):
         self.send_to_socket(TAG_CFG, f'set_username {self.username}')
         username_response = self.receive_from_socket()
@@ -103,6 +121,7 @@ class Client:
         self.emitter.on('config', self._handle_config)
         self.emitter.on('command', self._handle_command)
         self.emitter.on('list', self._handle_list)
+        self.emitter.on('file', self._handle_file)
 
     @staticmethod
     def _handle_message(author: str, message: str):
@@ -123,6 +142,18 @@ class Client:
     @staticmethod
     def _handle_list(user_list: str):
         print(f'[SERVER]: Users online: {user_list}')
+
+    def _handle_file(self, file_header: str):
+        header_split = file_header.split(';')
+
+        source_user = header_split[0]
+        filename = header_split[1]
+        file_size = int(header_split[2])
+
+        print(f'[SERVER]: User {source_user} has sent the file {filename}')
+        self.file_transfer_downloader = FileTransferDownloader(filename, file_size, self.host, self.file_transfer_port, buffer_size=self.buf_size)
+        self.file_transfer_downloader.set_on_finished(self.on_file_downloaded)
+        self.file_transfer_downloader.start()
 
     def receive_from_socket(self) -> str:
         if self.socket is None:

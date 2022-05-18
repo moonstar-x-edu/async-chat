@@ -1,7 +1,8 @@
 import os
+from pathlib import Path
 from datetime import datetime
 from tkinter import *
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 from PIL import ImageTk, Image
 
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -81,13 +82,19 @@ class ChatWindow:
         self.client.send_message_to(self.peer_username, message)
 
     def send_file(self):
-        filetypes = [
-            ('All files', '*.*')
-        ]
+        try:
+            filetypes = [
+                ('All files', '*.*')
+            ]
 
-        filename = filedialog.askopenfilename(
-            title='Open a file',
-            initialdir='/',
-            filetypes=filetypes)
+            file_path = filedialog.askopenfilename(title='Open a file', initialdir=Path.home(), filetypes=filetypes)
 
-        print(filename)
+            if file_path is None or '':
+                return
+
+            filename = os.path.basename(file_path)
+
+            self.client.send_file(self.peer_username, filename, file_path)
+
+        except Exception as e:
+            messagebox.showerror('Could not upload the file.', str(e))

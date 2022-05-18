@@ -48,6 +48,8 @@ class ChatInterface:
         self.client.emitter.on('connect', self._handle_connect)
         self.client.emitter.on('disconnect', self._handle_disconnect)
 
+        self.client.set_on_file_downloaded(self._on_file_downloaded)
+
     def _handle_user_list(self, users_online: str):
         online_list = users_online.split(', ')
         online_list = filter(lambda u: u != self.client.username, online_list)
@@ -88,6 +90,10 @@ class ChatInterface:
 
         self.create_chat_window(peer_username)
         self.client.connect_to_user(peer_username)
+
+    @staticmethod
+    def _on_file_downloaded(file_path: str):
+        messagebox.showinfo('File downloaded!', f'A file has been downloaded and can be found in {file_path}')
 
     def create_chat_window(self, peer_username: str):
         chat_window = ChatWindow(self, self.mainframe, peer_username)
