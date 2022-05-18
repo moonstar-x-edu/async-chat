@@ -121,7 +121,7 @@ class Connection(Thread):
             peer_username = command[len('disconnect '):]
 
             if len(peer_username) < 1:
-                return self.send_to_socket(TAG_ERR, 'You need to specify a user to connect to.')
+                return self.send_to_socket(TAG_ERR, 'You need to specify a user to disconnect from.')
 
             return self.disconnect_from_peer(peer_username)
 
